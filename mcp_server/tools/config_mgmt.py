@@ -1,7 +1,7 @@
 """
-配置管理工具
+Configuration Management工具
 
-实现配置查询和管理功能。
+实现配置query和管理功能。
 """
 
 from typing import Dict, Optional
@@ -12,26 +12,26 @@ from ..utils.errors import MCPError
 
 
 class ConfigManagementTools:
-    """配置管理工具类"""
+    """Configuration Management工具类"""
 
     def __init__(self, project_root: str = None):
         """
-        初始化配置管理工具
+        InitializeConfiguration Management工具
 
         Args:
-            project_root: 项目根目录
+            project_root: 项目根directory
         """
         self.data_service = DataService(project_root)
 
     def get_current_config(self, section: Optional[str] = None) -> Dict:
         """
-        获取当前系统配置
+        Getcurrent系统配置
 
         Args:
-            section: 配置节 - all/crawler/push/keywords/weights，默认all
+            section: 配置节 - all/crawler/push/keywords/weights，defaultall
 
         Returns:
-            配置字典
+            配置dictionary
 
         Example:
             >>> tools = ConfigManagementTools()
@@ -39,10 +39,10 @@ class ConfigManagementTools:
             >>> print(result['crawler']['platforms'])
         """
         try:
-            # 参数验证
+            # 参数Validate
             section = validate_config_section(section)
 
-            # 获取配置
+            # Get配置
             config = self.data_service.get_current_config(section=section)
 
             return {

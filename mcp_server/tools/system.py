@@ -1,7 +1,7 @@
 """
 系统管理工具
 
-实现系统状态查询和爬虫触发功能。
+实现系统状态query和爬虫触发功能。
 """
 
 from pathlib import Path
@@ -17,25 +17,25 @@ class SystemManagementTools:
 
     def __init__(self, project_root: str = None):
         """
-        初始化系统管理工具
+        Initialize系统管理工具
 
         Args:
-            project_root: 项目根目录
+            project_root: 项目根directory
         """
         self.data_service = DataService(project_root)
         if project_root:
             self.project_root = Path(project_root)
         else:
-            # 获取项目根目录
+            # Get项目根directory
             current_file = Path(__file__)
             self.project_root = current_file.parent.parent.parent
 
     def get_system_status(self) -> Dict:
         """
-        获取系统运行状态和健康检查信息
+        Get系统运行状态和健康Checkinformation
 
         Returns:
-            系统状态字典
+            系统状态dictionary
 
         Example:
             >>> tools = SystemManagementTools()
@@ -43,7 +43,7 @@ class SystemManagementTools:
             >>> print(result['system']['version'])
         """
         try:
-            # 获取系统状态
+            # Get系统状态
             status = self.data_service.get_system_status()
 
             return {
@@ -67,22 +67,22 @@ class SystemManagementTools:
 
     def trigger_crawl(self, platforms: Optional[List[str]] = None, save_to_local: bool = False, include_url: bool = False) -> Dict:
         """
-        手动触发一次临时爬取任务（可选持久化）
+        手动触发一次临时爬取任务（optional持久化）
 
         Args:
-            platforms: 指定平台列表，为空则爬取所有平台
-            save_to_local: 是否保存到本地 output 目录，默认 False
-            include_url: 是否包含URL链接，默认False（节省token）
+            platforms: 指定Platformlist，为空则爬取所有Platform
+            save_to_local: 是否Save到本地 output directory，default False
+            include_url: 是否includeURLlink，defaultFalse（节省token）
 
         Returns:
-            爬取结果字典，包含新闻数据和保存路径（如果保存）
+            爬取resultdictionary，includenewsdata和Savepath（如果Save）
 
         Example:
             >>> tools = SystemManagementTools()
-            >>> # 临时爬取，不保存
+            >>> # 临时爬取，不Save
             >>> result = tools.trigger_crawl(platforms=['zhihu', 'weibo'])
             >>> print(result['data'])
-            >>> # 爬取并保存到本地
+            >>> # 爬取并Save到本地
             >>> result = tools.trigger_crawl(platforms=['zhihu'], save_to_local=True)
             >>> print(result['saved_files'])
         """
@@ -95,44 +95,44 @@ class SystemManagementTools:
             import pytz
             import yaml
 
-            # 参数验证
+            # 参数Validate
             platforms = validate_platforms(platforms)
 
-            # 加载配置文件
+            # Load configuration file
             config_path = self.project_root / "config" / "config.yaml"
             if not config_path.exists():
                 raise CrawlTaskError(
-                    "配置文件不存在",
-                    suggestion=f"请确保配置文件存在: {config_path}"
+                    "configuration filedoes not exist",
+                    suggestion=f"请确保configuration file存在: {config_path}"
                 )
 
             # 读取配置
             with open(config_path, "r", encoding="utf-8") as f:
                 config_data = yaml.safe_load(f)
 
-            # 获取平台配置
+            # GetPlatform配置
             all_platforms = config_data.get("platforms", [])
             if not all_platforms:
                 raise CrawlTaskError(
-                    "配置文件中没有平台配置",
-                    suggestion="请检查 config/config.yaml 中的 platforms 配置"
+                    "configuration file中没有Platform配置",
+                    suggestion="请Check config/config.yaml 中的 platforms 配置"
                 )
 
-            # 过滤平台
+            # 过滤Platform
             if platforms:
                 target_platforms = [p for p in all_platforms if p["id"] in platforms]
                 if not target_platforms:
                     raise CrawlTaskError(
-                        f"指定的平台不存在: {platforms}",
-                        suggestion=f"可用平台: {[p['id'] for p in all_platforms]}"
+                        f"指定的Platformdoes not exist: {platforms}",
+                        suggestion=f"可用Platform: {[p['id'] for p in all_platforms]}"
                     )
             else:
                 target_platforms = all_platforms
 
-            # 获取请求间隔
+            # Get请求间隔
             request_interval = config_data.get("crawler", {}).get("request_interval", 100)
 
-            # 构建平台ID列表
+            # 构建List of platform IDs
             ids = []
             for platform in target_platforms:
                 if "name" in platform:
@@ -140,9 +140,9 @@ class SystemManagementTools:
                 else:
                     ids.append(platform["id"])
 
-            print(f"开始临时爬取，平台: {[p.get('name', p['id']) for p in target_platforms]}")
+            print(f"开始临时爬取，Platform: {[p.get('name', p['id']) for p in target_platforms]}")
 
-            # 爬取数据
+            # 爬取data
             results = {}
             id_to_name = {}
             failed_ids = []
@@ -167,7 +167,7 @@ class SystemManagementTools:
                     "Cache-Control": "no-cache",
                 }
 
-                # 重试机制
+                # Retry机制
                 max_retries = 2
                 retries = 0
                 success = False
@@ -182,12 +182,12 @@ class SystemManagementTools:
 
                         status = data_json.get("status", "未知")
                         if status not in ["success", "cache"]:
-                            raise ValueError(f"响应状态异常: {status}")
+                            raise ValueError(f"响应状态abnormal: {status}")
 
-                        status_info = "最新数据" if status == "success" else "缓存数据"
-                        print(f"获取 {id_value} 成功（{status_info}）")
+                        status_info = "latestdata" if status == "success" else "缓存data"
+                        print(f"Get {id_value} successfully（{status_info}）")
 
-                        # 解析数据
+                        # Parsedata
                         results[id_value] = {}
                         for index, item in enumerate(data_json.get("items", []), 1):
                             title = item["title"]
@@ -209,10 +209,10 @@ class SystemManagementTools:
                         retries += 1
                         if retries <= max_retries:
                             wait_time = random.uniform(3, 5)
-                            print(f"请求 {id_value} 失败: {e}. {wait_time:.2f}秒后重试...")
+                            print(f"请求 {id_value} failed: {e}. {wait_time:.2f}second后Retry...")
                             time.sleep(wait_time)
                         else:
-                            print(f"请求 {id_value} 失败: {e}")
+                            print(f"请求 {id_value} failed: {e}")
                             failed_ids.append(id_value)
 
                 # 请求间隔
@@ -221,7 +221,7 @@ class SystemManagementTools:
                     actual_interval = max(50, actual_interval)
                     time.sleep(actual_interval / 1000)
 
-            # 格式化返回数据
+            # 格式化returndata
             news_data = []
             for platform_id, titles_data in results.items():
                 platform_name = id_to_name.get(platform_id, platform_id)
@@ -240,11 +240,11 @@ class SystemManagementTools:
 
                     news_data.append(news_item)
 
-            # 获取北京时间
+            # Get北京time
             beijing_tz = pytz.timezone("Asia/Shanghai")
             now = datetime.now(beijing_tz)
 
-            # 构建返回结果
+            # 构建returnresult
             result = {
                 "success": True,
                 "task_id": f"crawl_{int(time.time())}",
@@ -257,14 +257,14 @@ class SystemManagementTools:
                 "saved_to_local": save_to_local
             }
 
-            # 如果需要持久化，调用保存逻辑
+            # 如果need持久化，调用Save逻辑
             if save_to_local:
                 try:
                     import re
 
-                    # 辅助函数：清理标题
+                    # 辅助函数：清理title
                     def clean_title(title: str) -> str:
-                        """清理标题中的特殊字符"""
+                        """清理title中的特殊字符"""
                         if not isinstance(title, str):
                             title = str(title)
                         cleaned_title = title.replace("\n", " ").replace("\r", " ")
@@ -272,26 +272,26 @@ class SystemManagementTools:
                         cleaned_title = cleaned_title.strip()
                         return cleaned_title
 
-                    # 辅助函数：创建目录
+                    # 辅助函数：Createdirectory
                     def ensure_directory_exists(directory: str):
-                        """确保目录存在"""
+                        """确保directory存在"""
                         Path(directory).mkdir(parents=True, exist_ok=True)
 
-                    # 格式化日期和时间
+                    # 格式化date和time
                     date_folder = now.strftime("%Y年%m月%d日")
                     time_filename = now.strftime("%H时%M分")
 
-                    # 创建 txt 文件路径
+                    # Create txt filepath
                     txt_dir = self.project_root / "output" / date_folder / "txt"
                     ensure_directory_exists(str(txt_dir))
                     txt_file_path = txt_dir / f"{time_filename}.txt"
 
-                    # 创建 html 文件路径
+                    # Create html filepath
                     html_dir = self.project_root / "output" / date_folder / "html"
                     ensure_directory_exists(str(html_dir))
                     html_file_path = html_dir / f"{time_filename}.html"
 
-                    # 保存 txt 文件（按照 main.py 的格式）
+                    # Save txt file（按照 main.py 的格式）
                     with open(txt_file_path, "w", encoding="utf-8") as f:
                         for id_value, title_data in results.items():
                             # id | name 或 id
@@ -301,7 +301,7 @@ class SystemManagementTools:
                             else:
                                 f.write(f"{id_value}\n")
 
-                            # 按排名排序标题
+                            # 按ranksorttitle
                             sorted_titles = []
                             for title, info in title_data.items():
                                 cleaned = clean_title(title)
@@ -330,16 +330,16 @@ class SystemManagementTools:
                             f.write("\n")
 
                         if failed_ids:
-                            f.write("==== 以下ID请求失败 ====\n")
+                            f.write("==== 以下ID请求failed ====\n")
                             for id_value in failed_ids:
                                 f.write(f"{id_value}\n")
 
-                    # 保存 html 文件（简化版）
+                    # Save html file（简化版）
                     html_content = self._generate_simple_html(results, id_to_name, failed_ids, now)
                     with open(html_file_path, "w", encoding="utf-8") as f:
                         f.write(html_content)
 
-                    print(f"数据已保存到:")
+                    print(f"data已Save到:")
                     print(f"  TXT: {txt_file_path}")
                     print(f"  HTML: {html_file_path}")
 
@@ -347,14 +347,14 @@ class SystemManagementTools:
                         "txt": str(txt_file_path),
                         "html": str(html_file_path)
                     }
-                    result["note"] = "数据已持久化到 output 文件夹"
+                    result["note"] = "data已持久化到 output file夹"
 
                 except Exception as e:
-                    print(f"保存文件失败: {e}")
+                    print(f"Savefilefailed: {e}")
                     result["save_error"] = str(e)
-                    result["note"] = "爬取成功但保存失败，数据仅在内存中"
+                    result["note"] = "爬取successfully但Savefailed，data仅在内存中"
             else:
-                result["note"] = "临时爬取结果，未持久化到output文件夹"
+                result["note"] = "临时爬取result，未持久化到outputfile夹"
 
             return result
 
@@ -375,13 +375,13 @@ class SystemManagementTools:
             }
 
     def _generate_simple_html(self, results: Dict, id_to_name: Dict, failed_ids: List, now) -> str:
-        """生成简化的 HTML 报告"""
+        """Generate简化的 HTML report"""
         html = """<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MCP 爬取结果</title>
+    <title>MCP 爬取result</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
         .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
@@ -400,19 +400,19 @@ class SystemManagementTools:
 </head>
 <body>
     <div class="container">
-        <h1>MCP 爬取结果</h1>
+        <h1>MCP 爬取result</h1>
 """
 
-        # 添加时间戳
-        html += f'        <p class="timestamp">爬取时间: {now.strftime("%Y-%m-%d %H:%M:%S")}</p>\n\n'
+        # 添加time戳
+        html += f'        <p class="timestamp">爬取time: {now.strftime("%Y-%m-%d %H:%M:%S")}</p>\n\n'
 
-        # 遍历每个平台
+        # 遍历每个Platform
         for platform_id, titles_data in results.items():
             platform_name = id_to_name.get(platform_id, platform_id)
             html += f'        <div class="platform">\n'
             html += f'            <div class="platform-name">{platform_name}</div>\n'
 
-            # 排序标题
+            # sorttitle
             sorted_items = []
             for title, info in titles_data.items():
                 ranks = info.get("ranks", [])
@@ -423,23 +423,23 @@ class SystemManagementTools:
 
             sorted_items.sort(key=lambda x: x[0])
 
-            # 显示新闻
+            # 显示news
             for rank, title, url, mobile_url in sorted_items:
                 html += f'            <div class="news-item">\n'
                 html += f'                <span class="rank">{rank}.</span>\n'
                 html += f'                <span class="title">{self._html_escape(title)}</span>\n'
                 if url:
-                    html += f'                <a class="link" href="{self._html_escape(url)}" target="_blank">链接</a>\n'
+                    html += f'                <a class="link" href="{self._html_escape(url)}" target="_blank">link</a>\n'
                 if mobile_url and mobile_url != url:
                     html += f'                <a class="link" href="{self._html_escape(mobile_url)}" target="_blank">移动版</a>\n'
                 html += '            </div>\n'
 
             html += '        </div>\n\n'
 
-        # 失败的平台
+        # failed的Platform
         if failed_ids:
             html += '        <div class="failed">\n'
-            html += '            <h3>请求失败的平台</h3>\n'
+            html += '            <h3>请求failed的Platform</h3>\n'
             html += '            <ul>\n'
             for platform_id in failed_ids:
                 html += f'                <li>{self._html_escape(platform_id)}</li>\n'

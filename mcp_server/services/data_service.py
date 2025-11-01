@@ -1,7 +1,7 @@
 """
-数据访问服务
+data访问服务
 
-提供统一的数据查询接口,封装数据访问逻辑。
+提供统一的dataquery接口,封装data访问逻辑。
 """
 
 import re
@@ -15,14 +15,14 @@ from ..utils.errors import DataNotFoundError
 
 
 class DataService:
-    """数据访问服务类"""
+    """data访问服务类"""
 
     def __init__(self, project_root: str = None):
         """
-        初始化数据服务
+        Initializedata服务
 
         Args:
-            project_root: 项目根目录
+            project_root: 项目根directory
         """
         self.parser = ParserService(project_root)
         self.cache = get_cache()
@@ -34,45 +34,45 @@ class DataService:
         include_url: bool = False
     ) -> List[Dict]:
         """
-        获取最新一批爬取的新闻数据
+        Getlatest一批爬取的newsdata
 
         Args:
-            platforms: 平台ID列表,None表示所有平台
-            limit: 返回条数限制
-            include_url: 是否包含URL链接,默认False(节省token)
+            platforms: List of platform IDs,None表示所有Platform
+            limit: return条数limit
+            include_url: 是否includeURLlink,defaultFalse(节省token)
 
         Returns:
-            新闻列表
+            newslist
 
         Raises:
-            DataNotFoundError: 数据不存在
+            DataNotFoundError: datadoes not exist
         """
-        # 尝试从缓存获取
+        # 尝试从缓存Get
         cache_key = f"latest_news:{','.join(platforms or [])}:{limit}:{include_url}"
-        cached = self.cache.get(cache_key, ttl=900)  # 15分钟缓存
+        cached = self.cache.get(cache_key, ttl=900)  # 15minute缓存
         if cached:
             return cached
 
-        # 读取今天的数据
+        # 读取today的data
         all_titles, id_to_name, timestamps = self.parser.read_all_titles_for_date(
             date=None,
             platform_ids=platforms
         )
 
-        # 获取最新的文件时间
+        # Getlatest的filetime
         if timestamps:
             latest_timestamp = max(timestamps.values())
             fetch_time = datetime.fromtimestamp(latest_timestamp)
         else:
             fetch_time = datetime.now()
 
-        # 转换为新闻列表
+        # 转换为newslist
         news_list = []
         for platform_id, titles in all_titles.items():
             platform_name = id_to_name.get(platform_id, platform_id)
 
             for title, info in titles.items():
-                # 取第一个排名
+                # 取第一个rank
                 rank = info["ranks"][0] if info["ranks"] else 0
 
                 news_item = {
@@ -90,13 +90,13 @@ class DataService:
 
                 news_list.append(news_item)
 
-        # 按排名排序
+        # 按ranksort
         news_list.sort(key=lambda x: x["rank"])
 
-        # 限制返回数量
+        # limitreturn数量
         result = news_list[:limit]
 
-        # 缓存结果
+        # 缓存result
         self.cache.set(cache_key, result)
 
         return result
@@ -109,19 +109,19 @@ class DataService:
         include_url: bool = False
     ) -> List[Dict]:
         """
-        按指定日期获取新闻
+        按指定dateGetnews
 
         Args:
-            target_date: 目标日期
-            platforms: 平台ID列表,None表示所有平台
-            limit: 返回条数限制
-            include_url: 是否包含URL链接,默认False(节省token)
+            target_date: 目标date
+            platforms: List of platform IDs,None表示所有Platform
+            limit: return条数limit
+            include_url: 是否includeURLlink,defaultFalse(节省token)
 
         Returns:
-            新闻列表
+            newslist
 
         Raises:
-            DataNotFoundError: 数据不存在
+            DataNotFoundError: datadoes not exist
 
         Examples:
             >>> service = DataService()
@@ -131,26 +131,26 @@ class DataService:
             ...     limit=20
             ... )
         """
-        # 尝试从缓存获取
+        # 尝试从缓存Get
         date_str = target_date.strftime("%Y-%m-%d")
         cache_key = f"news_by_date:{date_str}:{','.join(platforms or [])}:{limit}:{include_url}"
-        cached = self.cache.get(cache_key, ttl=1800)  # 30分钟缓存
+        cached = self.cache.get(cache_key, ttl=1800)  # 30minute缓存
         if cached:
             return cached
 
-        # 读取指定日期的数据
+        # 读取指定date的data
         all_titles, id_to_name, timestamps = self.parser.read_all_titles_for_date(
             date=target_date,
             platform_ids=platforms
         )
 
-        # 转换为新闻列表
+        # 转换为newslist
         news_list = []
         for platform_id, titles in all_titles.items():
             platform_name = id_to_name.get(platform_id, platform_id)
 
             for title, info in titles.items():
-                # 计算平均排名
+                # 计算平均rank
                 avg_rank = sum(info["ranks"]) / len(info["ranks"]) if info["ranks"] else 0
 
                 news_item = {
@@ -170,13 +170,13 @@ class DataService:
 
                 news_list.append(news_item)
 
-        # 按排名排序
+        # 按ranksort
         news_list.sort(key=lambda x: x["rank"])
 
-        # 限制返回数量
+        # limitreturn数量
         result = news_list[:limit]
 
-        # 缓存结果(历史数据缓存更久)
+        # 缓存result(historydata缓存更久)
         self.cache.set(cache_key, result)
 
         return result
@@ -189,32 +189,32 @@ class DataService:
         limit: Optional[int] = None
     ) -> Dict:
         """
-        按关键词搜索新闻
+        按关键词searchnews
 
         Args:
-            keyword: 搜索关键词
-            date_range: 日期范围 (start_date, end_date)
-            platforms: 平台过滤列表
-            limit: 返回条数限制(可选)
+            keyword: Search keyword
+            date_range: date范围 (start_date, end_date)
+            platforms: Platform过滤list
+            limit: return条数limit(optional)
 
         Returns:
-            搜索结果字典
+            searchresultdictionary
 
         Raises:
-            DataNotFoundError: 数据不存在
+            DataNotFoundError: datadoes not exist
         """
-        # 确定搜索日期范围
+        # 确定searchdate范围
         if date_range:
             start_date, end_date = date_range
         else:
-            # 默认搜索今天
+            # defaultsearchtoday
             start_date = end_date = datetime.now()
 
-        # 收集所有匹配的新闻
+        # 收集所有匹配的news
         results = []
         platform_distribution = Counter()
 
-        # 遍历日期范围
+        # 遍历date范围
         current_date = start_date
         while current_date <= end_date:
             try:
@@ -223,13 +223,13 @@ class DataService:
                     platform_ids=platforms
                 )
 
-                # 搜索包含关键词的标题
+                # searchinclude关键词的title
                 for platform_id, titles in all_titles.items():
                     platform_name = id_to_name.get(platform_id, platform_id)
 
                     for title, info in titles.items():
                         if keyword.lower() in title.lower():
-                            # 计算平均排名
+                            # 计算平均rank
                             avg_rank = sum(info["ranks"]) / len(info["ranks"]) if info["ranks"] else 0
 
                             results.append({
@@ -247,7 +247,7 @@ class DataService:
                             platform_distribution[platform_id] += 1
 
             except DataNotFoundError:
-                # 该日期没有数据,继续下一天
+                # 该date没有data,继续下一天
                 pass
 
             # 下一天
@@ -255,18 +255,18 @@ class DataService:
 
         if not results:
             raise DataNotFoundError(
-                f"未找到包含关键词 '{keyword}' 的新闻",
-                suggestion="请尝试其他关键词或扩大日期范围"
+                f"未找到include关键词 '{keyword}' 的news",
+                suggestion="请尝试其他关键词或扩大date范围"
             )
 
-        # 计算统计信息
+        # 计算statisticsinformation
         total_ranks = []
         for item in results:
             total_ranks.extend(item["ranks"])
 
         avg_rank = sum(total_ranks) / len(total_ranks) if total_ranks else 0
 
-        # 限制返回数量(如果指定)
+        # limitreturn数量(如果指定)
         total_found = len(results)
         if limit is not None and limit > 0:
             results = results[:limit]
@@ -288,74 +288,74 @@ class DataService:
         mode: str = "current"
     ) -> Dict:
         """
-        获取个人关注词的新闻出现频率统计
+        Get个人关注词的news出现频率statistics
 
-        注意:本工具基于 config/frequency_words.txt 中的个人关注词列表进行统计,
-        而不是自动从新闻中提取热点话题。用户可以自定义这个关注词列表。
+        Note:本工具基于 config/frequency_words.txt 中的个人关注词list进行statistics,
+        而不是自动从news中提取hot topic话题。用户cancustom这个关注词list。
 
         Args:
-            top_n: 返回TOP N关注词
-            mode: 模式 - daily(当日累计), current(最新一批)
+            top_n: returnTOP N关注词
+            mode: 模式 - daily(当日累计), current(latest一批)
 
         Returns:
-            关注词频率统计字典
+            关注词频率statisticsdictionary
 
         Raises:
-            DataNotFoundError: 数据不存在
+            DataNotFoundError: datadoes not exist
         """
-        # 尝试从缓存获取
+        # 尝试从缓存Get
         cache_key = f"trending_topics:{top_n}:{mode}"
-        cached = self.cache.get(cache_key, ttl=1800)  # 30分钟缓存
+        cached = self.cache.get(cache_key, ttl=1800)  # 30minute缓存
         if cached:
             return cached
 
-        # 读取今天的数据
+        # 读取today的data
         all_titles, id_to_name, timestamps = self.parser.read_all_titles_for_date()
 
         if not all_titles:
             raise DataNotFoundError(
-                "未找到今天的新闻数据",
-                suggestion="请确保爬虫已经运行并生成了数据"
+                "未找到today的newsdata",
+                suggestion="请确保爬虫已经运行并Generate了data"
             )
 
-        # 加载关键词配置
+        # Load关键词配置
         word_groups = self.parser.parse_frequency_words()
 
-        # 根据mode选择要处理的标题数据
+        # 根据mode选择要Process的titledata
         titles_to_process = {}
 
         if mode == "daily":
-            # daily模式:处理当天所有累计数据
+            # daily模式:Process当天所有累计data
             titles_to_process = all_titles
 
         elif mode == "current":
-            # current模式:只处理最新一批数据(最新时间戳的文件)
+            # current模式:只Processlatest一批data(latesttime戳的file)
             if timestamps:
-                # 找出最新的时间戳
+                # 找出latest的time戳
                 latest_timestamp = max(timestamps.values())
 
-                # 重新读取,只获取最新时间的数据
-                # 这里我们通过timestamps字典反查找最新文件对应的平台
+                # 重新读取,只Getlatesttime的data
+                # 这里我们通过timestampsdictionary反查找latestfile对应的Platform
                 latest_titles, _, _ = self.parser.read_all_titles_for_date()
 
-                # 由于read_all_titles_for_date返回所有文件的合并数据,
-                # 我们需要通过timestamps来过滤出最新批次
-                # 简化实现:使用当前所有数据作为最新批次
-                # (更精确的实现需要解析服务支持按时间过滤)
+                # 由于read_all_titles_for_datereturn所有file的合并data,
+                # 我们need通过timestamps来过滤出latest批次
+                # 简化实现:usecurrent所有data作为latest批次
+                # (更精确的实现needParse服务support按time过滤)
                 titles_to_process = latest_titles
             else:
                 titles_to_process = all_titles
 
         else:
             raise ValueError(
-                f"不支持的模式: {mode}。支持的模式: daily, current"
+                f"不Supported modes: {mode}。Supported modes: daily, current"
             )
 
-        # 统计词频
+        # statistics词频
         word_frequency = Counter()
         keyword_to_news = {}
 
-        # 遍历要处理的标题
+        # 遍历要Process的title
         for platform_id, titles in titles_to_process.items():
             for title in titles.keys():
                 # 对每个关键词组进行匹配
@@ -370,10 +370,10 @@ class DataService:
                                 keyword_to_news[word] = []
                             keyword_to_news[word].append(title)
 
-        # 获取TOP N关键词
+        # GetTOP N关键词
         top_keywords = word_frequency.most_common(top_n)
 
-        # 构建话题列表
+        # 构建话题list
         topics = []
         for keyword, frequency in top_keywords:
             matched_news = keyword_to_news.get(keyword, [])
@@ -381,12 +381,12 @@ class DataService:
             topics.append({
                 "keyword": keyword,
                 "frequency": frequency,
-                "matched_news": len(set(matched_news)),  # 去重后的新闻数量
-                "trend": "stable",  # TODO: 需要历史数据来计算趋势
-                "weight_score": 0.0  # TODO: 需要实现权重计算
+                "matched_news": len(set(matched_news)),  # 去重后的news数量
+                "trend": "stable",  # TODO: needhistorydata来计算趋势
+                "weight_score": 0.0  # TODO: need实现权重计算
             })
 
-        # 构建结果
+        # 构建result
         result = {
             "topics": topics,
             "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -395,43 +395,43 @@ class DataService:
             "description": self._get_mode_description(mode)
         }
 
-        # 缓存结果
+        # 缓存result
         self.cache.set(cache_key, result)
 
         return result
 
     def _get_mode_description(self, mode: str) -> str:
-        """获取模式描述"""
+        """Get模式描述"""
         descriptions = {
-            "daily": "当日累计统计",
-            "current": "最新一批统计"
+            "daily": "当日累计statistics",
+            "current": "latest一批statistics"
         }
         return descriptions.get(mode, "未知模式")
 
     def get_current_config(self, section: str = "all") -> Dict:
         """
-        获取当前系统配置
+        Getcurrent系统配置
 
         Args:
             section: 配置节 - all/crawler/push/keywords/weights
 
         Returns:
-            配置字典
+            配置dictionary
 
         Raises:
-            FileParseError: 配置文件解析错误
+            FileParseError: 配置File parse error
         """
-        # 尝试从缓存获取
+        # 尝试从缓存Get
         cache_key = f"config:{section}"
-        cached = self.cache.get(cache_key, ttl=3600)  # 1小时缓存
+        cached = self.cache.get(cache_key, ttl=3600)  # 1hour缓存
         if cached:
             return cached
 
-        # 解析配置文件
+        # Parseconfiguration file
         config_data = self.parser.parse_yaml_config()
         word_groups = self.parser.parse_frequency_words()
 
-        # 根据section返回对应配置
+        # 根据sectionreturn对应配置
         if section == "all" or section == "crawler":
             crawler_config = {
                 "enable_crawler": config_data.get("crawler", {}).get("enable_crawler", True),
@@ -449,7 +449,7 @@ class DataService:
                 "push_window": config_data.get("notification", {}).get("push_window", {})
             }
 
-            # 检测已配置的通知渠道
+            # 检测已配置的notification渠道
             webhooks = config_data.get("notification", {}).get("webhooks", {})
             if webhooks.get("feishu_url"):
                 push_config["enabled_channels"].append("feishu")
@@ -471,7 +471,7 @@ class DataService:
                 "hotness_weight": config_data.get("weight", {}).get("hotness_weight", 0.1)
             }
 
-        # 组装结果
+        # 组装result
         if section == "all":
             result = {
                 "crawler": crawler_config,
@@ -490,22 +490,22 @@ class DataService:
         else:
             result = {}
 
-        # 缓存结果
+        # 缓存result
         self.cache.set(cache_key, result)
 
         return result
 
     def get_available_date_range(self) -> Tuple[Optional[datetime], Optional[datetime]]:
         """
-        扫描 output 目录，返回实际可用的日期范围
+        扫描 output directory，return实际可用的date范围
 
         Returns:
-            (最早日期, 最新日期) 元组，如果没有数据则返回 (None, None)
+            (最早date, latestdate) 元组，如果没有data则return (None, None)
 
         Examples:
             >>> service = DataService()
             >>> earliest, latest = service.get_available_date_range()
-            >>> print(f"可用日期范围：{earliest} 至 {latest}")
+            >>> print(f"可用date范围：{earliest} to {latest}")
         """
         output_dir = self.parser.project_root / "output"
 
@@ -514,10 +514,10 @@ class DataService:
 
         available_dates = []
 
-        # 遍历日期文件夹
+        # 遍历datefile夹
         for date_folder in output_dir.iterdir():
             if date_folder.is_dir() and not date_folder.name.startswith('.'):
-                # 解析日期（格式: YYYY年MM月DD日）
+                # Parsedate（格式: YYYY年MM月DD日）
                 try:
                     date_match = re.match(r'(\d{4})年(\d{2})月(\d{2})日', date_folder.name)
                     if date_match:
@@ -537,12 +537,12 @@ class DataService:
 
     def get_system_status(self) -> Dict:
         """
-        获取系统运行状态
+        Get系统运行状态
 
         Returns:
-            系统状态字典
+            系统状态dictionary
         """
-        # 获取数据统计
+        # Getdatastatistics
         output_dir = self.parser.project_root / "output"
 
         total_storage = 0
@@ -551,10 +551,10 @@ class DataService:
         total_news = 0
 
         if output_dir.exists():
-            # 遍历日期文件夹
+            # 遍历datefile夹
             for date_folder in output_dir.iterdir():
                 if date_folder.is_dir():
-                    # 解析日期
+                    # Parsedate
                     try:
                         date_str = date_folder.name
                         # 格式: YYYY年MM月DD日
@@ -579,7 +579,7 @@ class DataService:
                         if item.is_file():
                             total_storage += item.stat().st_size
 
-        # 读取版本信息
+        # 读取版本information
         version_file = self.parser.project_root / "version"
         version = "unknown"
         if version_file.exists():

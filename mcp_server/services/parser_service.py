@@ -1,7 +1,7 @@
 """
-文件解析服务
+fileParse服务
 
-提供txt格式新闻数据和YAML配置文件的解析功能。
+提供txt格式newsdata和YAMLconfiguration file的Parse功能。
 """
 
 import re
@@ -16,35 +16,35 @@ from .cache_service import get_cache
 
 
 class ParserService:
-    """文件解析服务类"""
+    """fileParse服务类"""
 
     def __init__(self, project_root: str = None):
         """
-        初始化解析服务
+        InitializeParse服务
 
         Args:
-            project_root: 项目根目录，默认为当前目录的父目录
+            project_root: 项目根directory，default为currentdirectory的父directory
         """
         if project_root is None:
-            # 获取当前文件所在目录的父目录的父目录
+            # Getcurrentfile所在directory的父directory的父directory
             current_file = Path(__file__)
             self.project_root = current_file.parent.parent.parent
         else:
             self.project_root = Path(project_root)
 
-        # 初始化缓存服务
+        # Initialize缓存服务
         self.cache = get_cache()
 
     @staticmethod
     def clean_title(title: str) -> str:
         """
-        清理标题文本
+        清理title文本
 
         Args:
-            title: 原始标题
+            title: 原始title
 
         Returns:
-            清理后的标题
+            清理后的title
         """
         # 移除多余空白
         title = re.sub(r'\s+', ' ', title)
@@ -54,10 +54,10 @@ class ParserService:
 
     def parse_txt_file(self, file_path: Path) -> Tuple[Dict, Dict]:
         """
-        解析单个txt文件的标题数据
+        Parse单个txtfile的titledata
 
         Args:
-            file_path: txt文件路径
+            file_path: txtfilepath
 
         Returns:
             (titles_by_id, id_to_name) 元组
@@ -65,10 +65,10 @@ class ParserService:
             - id_to_name: {platform_id: platform_name}
 
         Raises:
-            FileParseError: 文件解析错误
+            FileParseError: File parse error
         """
         if not file_path.exists():
-            raise FileParseError(str(file_path), "文件不存在")
+            raise FileParseError(str(file_path), "filedoes not exist")
 
         titles_by_id = {}
         id_to_name = {}
@@ -79,14 +79,14 @@ class ParserService:
                 sections = content.split("\n\n")
 
                 for section in sections:
-                    if not section.strip() or "==== 以下ID请求失败 ====" in section:
+                    if not section.strip() or "==== 以下ID请求failed ====" in section:
                         continue
 
                     lines = section.strip().split("\n")
                     if len(lines) < 2:
                         continue
 
-                    # 解析header: id | name 或 id
+                    # Parseheader: id | name 或 id
                     header_line = lines[0].strip()
                     if " | " in header_line:
                         parts = header_line.split(" | ", 1)
@@ -99,14 +99,14 @@ class ParserService:
 
                     titles_by_id[source_id] = {}
 
-                    # 解析标题行
+                    # Parsetitle行
                     for line in lines[1:]:
                         if line.strip():
                             try:
                                 title_part = line.strip()
                                 rank = None
 
-                                # 提取排名
+                                # 提取rank
                                 if ". " in title_part and title_part.split(". ")[0].isdigit():
                                     rank_str, title_part = title_part.split(". ", 1)
                                     rank = int(rank_str)
@@ -135,7 +135,7 @@ class ParserService:
                                 }
 
                             except Exception as e:
-                                # 忽略单行解析错误
+                                # 忽略单行Parseerror
                                 continue
 
         except Exception as e:
@@ -145,13 +145,13 @@ class ParserService:
 
     def get_date_folder_name(self, date: datetime = None) -> str:
         """
-        获取日期文件夹名称
+        Getdatefile夹名称
 
         Args:
-            date: 日期对象，默认为今天
+            date: date对象，default为today
 
         Returns:
-            文件夹名称，格式: YYYY年MM月DD日
+            file夹名称，格式: YYYY年MM月DD日
         """
         if date is None:
             date = datetime.now()
@@ -163,11 +163,11 @@ class ParserService:
         platform_ids: Optional[List[str]] = None
     ) -> Tuple[Dict, Dict, Dict]:
         """
-        读取指定日期的所有标题文件（带缓存）
+        读取指定date的所有titlefile（带缓存）
 
         Args:
-            date: 日期对象，默认为今天
-            platform_ids: 平台ID列表，None表示所有平台
+            date: date对象，default为today
+            platform_ids: List of platform IDs，None表示所有Platform
 
         Returns:
             (all_titles, id_to_name, all_timestamps) 元组
@@ -176,56 +176,56 @@ class ParserService:
             - all_timestamps: {filename: timestamp}
 
         Raises:
-            DataNotFoundError: 数据不存在
+            DataNotFoundError: datadoes not exist
         """
-        # 生成缓存键
+        # Generate缓存键
         date_str = self.get_date_folder_name(date)
         platform_key = ','.join(sorted(platform_ids)) if platform_ids else 'all'
         cache_key = f"read_all_titles:{date_str}:{platform_key}"
 
-        # 尝试从缓存获取
-        # 对于历史数据（非今天），使用更长的缓存时间（1小时）
-        # 对于今天的数据，使用较短的缓存时间（15分钟），因为可能有新数据
+        # 尝试从缓存Get
+        # 对于historydata（非today），use更长的缓存time（1hour）
+        # 对于today的data，use较短的缓存time（15minute），因为可能有新data
         is_today = (date is None) or (date.date() == datetime.now().date())
-        ttl = 900 if is_today else 3600  # 15分钟 vs 1小时
+        ttl = 900 if is_today else 3600  # 15minute vs 1hour
 
         cached = self.cache.get(cache_key, ttl=ttl)
         if cached:
             return cached
 
-        # 缓存未命中，读取文件
+        # 缓存未命中，读取file
         date_folder = self.get_date_folder_name(date)
         txt_dir = self.project_root / "output" / date_folder / "txt"
 
         if not txt_dir.exists():
             raise DataNotFoundError(
-                f"未找到 {date_folder} 的数据目录",
-                suggestion="请先运行爬虫或检查日期是否正确"
+                f"未找到 {date_folder} 的datadirectory",
+                suggestion="请先运行爬虫或Checkdate是否正确"
             )
 
         all_titles = {}
         id_to_name = {}
         all_timestamps = {}
 
-        # 读取所有txt文件
+        # 读取所有txtfile
         txt_files = sorted(txt_dir.glob("*.txt"))
 
         if not txt_files:
             raise DataNotFoundError(
-                f"{date_folder} 没有数据文件",
-                suggestion="请等待爬虫任务完成"
+                f"{date_folder} 没有datafile",
+                suggestion="Please wait爬虫任务完成"
             )
 
         for txt_file in txt_files:
             try:
                 titles_by_id, file_id_to_name = self.parse_txt_file(txt_file)
 
-                # 更新id_to_name
+                # Updateid_to_name
                 id_to_name.update(file_id_to_name)
 
-                # 合并标题数据
+                # 合并titledata
                 for platform_id, titles in titles_by_id.items():
-                    # 如果指定了平台过滤
+                    # 如果指定了Platform过滤
                     if platform_ids and platform_id not in platform_ids:
                         continue
 
@@ -234,26 +234,26 @@ class ParserService:
 
                     for title, info in titles.items():
                         if title in all_titles[platform_id]:
-                            # 合并排名
+                            # 合并rank
                             all_titles[platform_id][title]["ranks"].extend(info["ranks"])
                         else:
                             all_titles[platform_id][title] = info.copy()
 
-                # 记录文件时间戳
+                # recordfiletime戳
                 all_timestamps[txt_file.name] = txt_file.stat().st_mtime
 
             except Exception as e:
-                # 忽略单个文件的解析错误，继续处理其他文件
-                print(f"Warning: 解析文件 {txt_file} 失败: {e}")
+                # 忽略单个file的Parseerror，继续Process其他file
+                print(f"Warning: Failed to parse file {txt_file} failed: {e}")
                 continue
 
         if not all_titles:
             raise DataNotFoundError(
-                f"{date_folder} 没有有效的数据",
-                suggestion="请检查数据文件格式或重新运行爬虫"
+                f"{date_folder} 没有有效的data",
+                suggestion="请Checkdatafile格式或重新运行爬虫"
             )
 
-        # 缓存结果
+        # 缓存result
         result = (all_titles, id_to_name, all_timestamps)
         self.cache.set(cache_key, result)
 
@@ -261,16 +261,16 @@ class ParserService:
 
     def parse_yaml_config(self, config_path: str = None) -> dict:
         """
-        解析YAML配置文件
+        ParseYAMLconfiguration file
 
         Args:
-            config_path: 配置文件路径，默认为 config/config.yaml
+            config_path: configuration filepath，default为 config/config.yaml
 
         Returns:
-            配置字典
+            配置dictionary
 
         Raises:
-            FileParseError: 配置文件解析错误
+            FileParseError: 配置File parse error
         """
         if config_path is None:
             config_path = self.project_root / "config" / "config.yaml"
@@ -278,7 +278,7 @@ class ParserService:
             config_path = Path(config_path)
 
         if not config_path.exists():
-            raise FileParseError(str(config_path), "配置文件不存在")
+            raise FileParseError(str(config_path), "configuration filedoes not exist")
 
         try:
             with open(config_path, "r", encoding="utf-8") as f:
@@ -289,16 +289,16 @@ class ParserService:
 
     def parse_frequency_words(self, words_file: str = None) -> List[Dict]:
         """
-        解析关键词配置文件
+        Parse关键词configuration file
 
         Args:
-            words_file: 关键词文件路径，默认为 config/frequency_words.txt
+            words_file: 关键词filepath，default为 config/frequency_words.txt
 
         Returns:
-            词组列表
+            词组list
 
         Raises:
-            FileParseError: 文件解析错误
+            FileParseError: File parse error
         """
         if words_file is None:
             words_file = self.project_root / "config" / "frequency_words.txt"
@@ -317,7 +317,7 @@ class ParserService:
                     if not line or line.startswith("#"):
                         continue
 
-                    # 使用 | 分隔符
+                    # use | 分隔符
                     parts = [p.strip() for p in line.split("|")]
                     if not parts:
                         continue
