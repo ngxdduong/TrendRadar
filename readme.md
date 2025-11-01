@@ -36,9 +36,9 @@
 
 <div align="center">
 
-| [🎯 核心功能](#-核心功能) | [🚀 快速开始](#-快速开始) | [🐳 Docker部署](#-docker-部署) | [🤖 AI分析专区](#-ai-智能分析部署) |
+| [🎯 核心功能](#-核心功能) | [🛠️ 如何运行](#️-如何运行本项目) | [🚀 快速开始](#-快速开始) | [🐳 Docker部署](#-docker-部署) |
 |:---:|:---:|:---:|:---:|
-| [📝 更新日志](#-更新日志) | [🔌 MCP客户端](#-mcp-客户端) | [❓ 答疑与常见问题](#问题答疑与1元点赞) | [⭐ 项目相关](#项目相关) |
+| [🤖 AI分析专区](#-ai-智能分析部署) | [🔌 MCP客户端](#-mcp-客户端) | [📝 更新日志](#-更新日志) | [❓ 答疑与常见问题](#问题答疑与1元点赞) |
 
 </div>
 
@@ -786,6 +786,203 @@ frequency_words.txt 文件增加了一个【必须词】功能，使用 + 号
 
 </details>
 
+
+## 🛠️ 如何运行本项目
+
+本项目提供多种运行方式，适用于不同场景和需求。以下是完整的运行指南：
+
+### 方式一：本地运行（推荐开发者使用）
+
+#### 前置要求
+- Python 3.10 或更高版本
+- Git（用于克隆项目）
+
+#### 安装步骤
+
+**1. 克隆项目**
+```bash
+git clone https://github.com/sansan0/TrendRadar.git
+cd TrendRadar
+```
+
+**2. 安装依赖**
+
+**方法 A：使用 UV（推荐，速度更快）**
+```bash
+# 安装 UV（如果还没安装）
+# macOS/Linux：
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows：
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# 安装项目依赖
+uv sync
+```
+
+**方法 B：使用传统 pip + venv**
+```bash
+# 创建虚拟环境
+python -m venv .venv
+
+# 激活虚拟环境
+# macOS/Linux：
+source .venv/bin/activate
+# Windows：
+.venv\Scripts\activate
+
+# 安装依赖
+pip install -r requirements.txt
+```
+
+**3. 配置文件**
+
+编辑配置文件以设置你的偏好：
+- `config/config.yaml` - 主配置文件（平台、推送设置、爬虫配置等）
+- `config/frequency_words.txt` - 关键词配置（设置你关心的热点词汇）
+
+**4. 运行项目**
+
+#### A. 运行新闻爬虫（传统模式）
+```bash
+# 使用 UV 运行
+uv run python main.py
+
+# 或者激活虚拟环境后运行
+python main.py
+```
+
+这将执行以下操作：
+- 抓取配置的所有平台的热点新闻
+- 根据关键词筛选和分析新闻
+- 生成 HTML 和 TXT 格式的报告到 `output/` 目录
+- 如果配置了 webhook，将推送通知到对应平台
+
+#### B. 运行 MCP 服务器（AI 分析模式）
+
+**STDIO 模式**（用于 Cherry Studio、Claude Desktop 等客户端）：
+```bash
+uv run python -m mcp_server.server
+```
+
+**HTTP 模式**（用于远程访问或 Web 客户端）：
+```bash
+# macOS/Linux：
+./start-http.sh
+
+# Windows：
+start-http.bat
+
+# 或者直接运行：
+uv run python -m mcp_server.server --transport http --host 0.0.0.0 --port 3333
+```
+
+HTTP 服务将在 `http://localhost:3333/mcp` 启动。
+
+### 方式二：一键设置脚本（最简单）
+
+项目提供了自动化设置脚本，可以一键完成环境配置。
+
+**macOS/Linux：**
+```bash
+chmod +x setup-mac.sh
+./setup-mac.sh
+```
+
+**Windows：**
+```cmd
+setup-windows.bat
+```
+
+脚本会自动：
+1. 检查并安装 UV（如果未安装）
+2. 创建虚拟环境并安装所有依赖
+3. 检查配置文件是否存在
+4. 显示 MCP 服务器配置信息（如需使用 AI 功能）
+
+### 方式三：GitHub Actions 自动化部署
+
+适合不想在本地运行，希望云端自动执行的用户。详见 [🚀 快速开始](#-快速开始) 章节。
+
+### 方式四：Docker 容器化部署
+
+适合需要稳定部署、定时任务或生产环境使用的场景。详见 [🐳 Docker 部署](#-docker-部署) 章节。
+
+### 快速测试
+
+运行后检查以下位置：
+- **输出文件**：`output/` 目录下的 HTML 和 TXT 文件
+- **日志输出**：终端/控制台中的运行日志
+- **推送通知**：如果配置了 webhook，检查对应平台（飞书/钉钉/企业微信/Telegram等）
+
+### 常见问题
+
+<details>
+<summary><strong>Q：如何切换运行模式？</strong></summary>
+
+编辑 `config/config.yaml` 文件中的 `report.mode`：
+- `daily`：当日汇总模式 - 显示当天所有匹配新闻
+- `current`：当前榜单模式 - 显示当前榜单的匹配新闻
+- `incremental`：增量监控模式 - 只推送新增的新闻
+</details>
+
+<details>
+<summary><strong>Q：如何配置推送通知？</strong></summary>
+
+在 `config/config.yaml` 中设置环境变量或 webhook URL：
+- 飞书：`FEISHU_WEBHOOK_URL`
+- 钉钉：`DINGTALK_WEBHOOK_URL`
+- 企业微信：`WEWORK_WEBHOOK_URL`
+- Telegram：`TELEGRAM_BOT_TOKEN` 和 `TELEGRAM_CHAT_ID`
+- 邮件：`EMAIL_FROM`、`EMAIL_PASSWORD`、`EMAIL_TO`
+- ntfy：`NTFY_SERVER_URL`、`NTFY_TOPIC`
+
+具体配置方法见 [🚀 快速开始](#-快速开始) 章节。
+</details>
+
+<details>
+<summary><strong>Q：为什么运行后没有输出？</strong></summary>
+
+可能的原因：
+1. **没有配置关键词**：检查 `config/frequency_words.txt` 是否为空或没有匹配的新闻
+2. **配置文件错误**：确保 `config/config.yaml` 格式正确
+3. **网络问题**：检查是否可以访问新闻 API
+4. **爬虫被禁用**：检查 `config.yaml` 中 `crawler.enable_crawler` 是否为 `true`
+</details>
+
+<details>
+<summary><strong>Q：如何使用代理？</strong></summary>
+
+在 `config/config.yaml` 中设置：
+```yaml
+crawler:
+  use_proxy: true
+  default_proxy: "http://127.0.0.1:7890"  # 替换为你的代理地址
+```
+</details>
+
+### 项目结构
+
+```
+TrendRadar/
+├── main.py                 # 主程序 - 新闻爬虫和推送
+├── mcp_server/            # MCP 服务器模块 - AI 分析功能
+│   ├── server.py          # MCP 服务器入口
+│   ├── tools/             # AI 分析工具集
+│   └── services/          # 服务层（数据、解析、缓存）
+├── config/                # 配置文件目录
+│   ├── config.yaml        # 主配置文件
+│   └── frequency_words.txt # 关键词配置
+├── output/                # 输出目录（自动生成）
+│   ├── *.html             # 网页格式报告
+│   └── *.txt              # 文本格式报告
+├── docker/                # Docker 部署文件
+├── setup-mac.sh           # macOS/Linux 一键设置脚本
+├── setup-windows.bat      # Windows 一键设置脚本
+├── start-http.sh          # HTTP 模式启动脚本（Unix）
+├── start-http.bat         # HTTP 模式启动脚本（Windows）
+└── requirements.txt       # Python 依赖列表
+```
 
 ## 🚀 快速开始
 
