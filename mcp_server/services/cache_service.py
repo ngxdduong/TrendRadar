@@ -1,7 +1,7 @@
 """
 缓存服务
 
-实现TTL缓存机制，提升数据访问性能。
+实现TTL缓存机制，提升data访问性能。
 """
 
 import time
@@ -13,36 +13,36 @@ class CacheService:
     """缓存服务类"""
 
     def __init__(self):
-        """初始化缓存服务"""
+        """Initialize缓存服务"""
         self._cache = {}
         self._timestamps = {}
         self._lock = Lock()
 
     def get(self, key: str, ttl: int = 900) -> Optional[Any]:
         """
-        获取缓存数据
+        Get缓存data
 
         Args:
             key: 缓存键
-            ttl: 存活时间（秒），默认15分钟
+            ttl: 存活time（second），default15minute
 
         Returns:
-            缓存的值，如果不存在或已过期则返回None
+            缓存的值，如果does not exist或已过期则returnNone
         """
         with self._lock:
             if key in self._cache:
-                # 检查是否过期
+                # Check是否过期
                 if time.time() - self._timestamps[key] < ttl:
                     return self._cache[key]
                 else:
-                    # 已过期，删除缓存
+                    # 已过期，Delete缓存
                     del self._cache[key]
                     del self._timestamps[key]
         return None
 
     def set(self, key: str, value: Any) -> None:
         """
-        设置缓存数据
+        设置缓存data
 
         Args:
             key: 缓存键
@@ -54,13 +54,13 @@ class CacheService:
 
     def delete(self, key: str) -> bool:
         """
-        删除缓存
+        Delete缓存
 
         Args:
             key: 缓存键
 
         Returns:
-            是否成功删除
+            是否successfullyDelete
         """
         with self._lock:
             if key in self._cache:
@@ -80,7 +80,7 @@ class CacheService:
         清理过期缓存
 
         Args:
-            ttl: 存活时间（秒）
+            ttl: 存活time（second）
 
         Returns:
             清理的条目数量
@@ -100,10 +100,10 @@ class CacheService:
 
     def get_stats(self) -> dict:
         """
-        获取缓存统计信息
+        Get缓存statisticsinformation
 
         Returns:
-            统计信息字典
+            statisticsinformationdictionary
         """
         with self._lock:
             return {
@@ -125,7 +125,7 @@ _global_cache = None
 
 def get_cache() -> CacheService:
     """
-    获取全局缓存实例
+    Get全局缓存实例
 
     Returns:
         全局缓存服务实例

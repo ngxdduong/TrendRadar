@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# 检查配置文件
+# Checking configuration files
 if [ ! -f "/app/config/config.yaml" ] || [ ! -f "/app/config/frequency_words.txt" ]; then
     echo "❌ 配置文件缺失"
     exit 1

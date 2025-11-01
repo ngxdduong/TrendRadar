@@ -7,8 +7,8 @@ echo ""
 
 # 检查虚拟环境
 if [ ! -d ".venv" ]; then
-    echo "❌ [错误] 虚拟环境未找到"
-    echo "请先运行 ./setup-mac.sh 进行部署"
+    echo "❌ [Error] 虚拟环境未找到"
+    echo "请先运行 ./setup-mac.sh 进行Setup"
     echo ""
     exit 1
 fi
